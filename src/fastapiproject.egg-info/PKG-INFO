@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: fastapiproject
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.12
+Requires-Dist: aio-pika==9.4.2
+Requires-Dist: aiomysql>=0.3.2
+Requires-Dist: apscheduler==3.11.0
+Requires-Dist: arrow>=1.4.0
+Requires-Dist: asgi-correlation-id>=4.3.4
+Requires-Dist: asyncpg>=0.31.0
+Requires-Dist: fastapi>=0.121.3
+Requires-Dist: fastapi-utils<1.0.0,>=0.7.0
+Requires-Dist: greenlet==3.2.3
+Requires-Dist: gunicorn==20.1.0
+Requires-Dist: loguru>=0.7.3
+Requires-Dist: motor==3.4.0
+Requires-Dist: prometheus-client==0.23.1
+Requires-Dist: pydantic-settings>=2.12.0
+Requires-Dist: pymongo==4.7.1
+Requires-Dist: python-multipart>=0.0.20
+Requires-Dist: pyyaml>=6.0.3
+Requires-Dist: redis==5.0.6
+Requires-Dist: requests>=2.32.5
+Requires-Dist: sqlmodel==0.0.14
+Requires-Dist: typing-inspect>=0.9.0
+Requires-Dist: uvicorn==0.34.3
