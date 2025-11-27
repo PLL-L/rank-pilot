@@ -11,6 +11,7 @@ from typing import Dict, Optional, Type
 from src.core.exception.custom_exception import GlobalErrorCodeException
 from src.utils.file.base import AbstractUpload
 from src.utils.file.strategy.local_file import LocalFileStrategy
+from src.utils.file.strategy.minio_file import MinIOFileStrategy
 # from src.utils.file.strategy.qiniu_file import QiniuFileStrategy
 from src.utils.singleton import Singleton
 
@@ -59,7 +60,7 @@ class FileUploadFactory(metaclass=Singleton):
         """
         strategy_map: Dict[str, Type[AbstractUpload]] = {
             "local": LocalFileStrategy,
-            # "qiniu": QiniuFileStrategy,
+            "minio": MinIOFileStrategy,
         }
         strategy_class = strategy_map.get(upload_type)
         return strategy_class() if strategy_class else None

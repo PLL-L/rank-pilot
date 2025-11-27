@@ -12,6 +12,7 @@ from src.schemas.response_schema import ResponseSchema
 from src.service.common import CommonService
 from src.utils.file.base import AbstractUpload
 from src.utils.file.file_factory import FileUploadFactory
+from src.utils.file.strategy.minio_file import MinIOFileStrategy
 
 common_bp = APIRouter()
 
@@ -27,7 +28,6 @@ class CommonController(BaseController):
             media_type=CONTENT_TYPE_LATEST  # 设置正确的 Content-Type，通常为 "text/plain; version=0.0.4"
         )
 
-
     @common_bp.post(
         "/upload",
         summary="文件上传",
@@ -35,25 +35,22 @@ class CommonController(BaseController):
         response_model=ResponseSchema,
     )
     async def upload_file(
-        self,
-        file: UploadFile = File(...),
-        path: str = Form(..., description="文件保存路径"),
+            self,
+            file: UploadFile = File(...),
+            # path: str = Form(..., description="文件保存路径"),
     ):
-        file_info = await FileUploadFactory.get_upload_strategy("local").upload_image(
-            path, file, accept=AbstractUpload.ALL_ACCEPT, max_size=10
-        )
-        # 文件
-        file_type = AbstractUpload.upload_type(file)
 
-        return self.success(data=file_info.get("remote_path"))
+        resul = await self.common_service.upload_file_to_minio(file)
+
+        return self.success(data=resul)
 
     @common_bp.get("/demo/test", description="演示接口")
     async def demos(self, ):
         logger.info(123)
-        await aio_mq.publish(routing_key=MqRoutingKey.TEST_QUEUE, msg={"123": "213"})
+        # await aio_mq.publish(routing_key=MqRoutingKey.TEST_QUEUE, msg={"123": "213"})
         return self.success("演示")
 
     @common_bp.get("/demo/{id}", description="演示接口")
-    async def demo(self, id: int ):
+    async def demo(self, id: int):
         res = await self.common_service.demo(id)
-        return self.success("演示",data=res)
+        return self.success("演示", data=res)

@@ -5,13 +5,13 @@
 # @File           : base.py
 # @IDE            : PyCharm
 # @Desc           : 文件上传抽象基类，定义了文件上传的通用接口和工具方法
-
+import io
 import random
 import string
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum, StrEnum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any, Dict, BinaryIO
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -75,108 +75,35 @@ class AbstractUpload(ABC):
     # 上传文件基础路径
     UPLOAD_PATH: str = settings.system.STATIC_PATH
 
+
     @abstractmethod
-    async def upload_video(
-        self,
-        path: str,
-        file: UploadFile,
-        accept: Optional[List[str]] = None,
-        max_size: int = 5,
-    ) -> str:
-        """上传视频文件
 
-        Args:
-            path: 保存路径
-            file: 上传的文件
-            accept: 允许的文件类型列表
-            max_size: 最大文件大小(MB)
-
-        Returns:
-            str: 文件访问路径
-
-        Raises:
-            GlobalErrorCodeException: 文件验证失败时抛出
+    def upload_file(
+            self,
+            file_content: Union[io.IOBase, bytes, BinaryIO],
+            file_path: str,
+            file_name: str,
+            content_type: str = "application/octet-stream",
+            file_size: Optional[int] = None
+    ) -> dict:
+        """
+        从文件流上传文件到Minio
+        :param file_content: 文件流对象或bytes数据
+        :param file_name: Minio上存储的对象名称
+        :param file_path: Minio上存储的路径
+        :param content_type: 文件内容类型
+        :param file_size: 文件大小（字节），如果为None则自动计算
+        :return: 上传结果字典
         """
         pass
 
-    @abstractmethod
-    async def upload_image(
-        self,
-        path: str,
-        file: UploadFile,
-        accept: Optional[List[str]] = None,
-        max_size: int = 5,
-    ) -> str:
-        """上传图片文件
-
-        Args:
-            path: 保存路径
-            file: 上传的文件
-            accept: 允许的文件类型列表
-            max_size: 最大文件大小(MB)
-
-        Returns:
-            str: 文件访问路径
-
-        Raises:
-            GlobalErrorCodeException: 文件验证失败时抛出
-        """
-        pass
 
     @abstractmethod
-    async def upload_file(
-        self,
-        path: str,
-        file: UploadFile,
-        accept: Optional[List[str]] = None,
-        max_size: int = 5,
-    ) -> str:
-        """上传普通文件
-
-        Args:
-            path: 保存路径
-            file: 上传的文件
-            accept: 允许的文件类型列表
-            max_size: 最大文件大小(MB)
-
-        Returns:
-            str: 文件访问路径
-
-        Raises:
-            GlobalErrorCodeException: 文件验证失败时抛出
-        """
-        pass
-
-    @abstractmethod
-    async def upload_audio(
-        self,
-        path: str,
-        file: UploadFile,
-        accept: Optional[List[str]] = None,
-        max_size: int = 5,
-    ) -> str:
-        """上传音频文件
-
-        Args:
-            path: 保存路径
-            file: 上传的文件
-            accept: 允许的文件类型列表
-            max_size: 最大文件大小(MB)
-
-        Returns:
-            str: 文件访问路径
-
-        Raises:
-            GlobalErrorCodeException: 文件验证失败时抛出
-        """
-        pass
-
-    @abstractmethod
-    async def delete_file(self, path: str) -> bool:
+    async def delete_file(self, info: Dict[str, Any]) -> bool:
         """删除文件
 
         Args:
-            path: 文件路径
+            info: {}
 
         Returns:
             bool: 删除是否成功

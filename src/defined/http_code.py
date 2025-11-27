@@ -1,15 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Time    : 2023/7/22 16:08
-# @Author  : YueJian
-# @File    : http_base.py
-# @Description :
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Time    : 2023/7/22 16:08
-# @Author  : YueJian
-# @File    : http_base.py
-# @Description :
+
 
 from enum import Enum
 
@@ -18,10 +8,10 @@ __all__ = ["HttpCode"]
 
 class HttpCode(Enum):
     # 成功类
-    SUCCESS = (200, "成功")
-    ADD_SUCCESS = (200, "添加成功")
-    UPDATE_SUCCESS = (200, "修改成功")
-    REMOVE_SUCCESS = (200, "删除成功")
+    SUCCESS = (0, "成功")
+    ADD_SUCCESS = (0, "添加成功")
+    UPDATE_SUCCESS = (0, "修改成功")
+    REMOVE_SUCCESS = (0, "删除成功")
 
     # 失败类
     FAILED = (400, "失败")

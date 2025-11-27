@@ -177,6 +177,21 @@ class SystemSettings(BaseSettings):
         """确保日志级别为大写"""
         return v.upper()
 
+class MinIOSettings(BaseSettings):
+    ACCESS_KEY: str = Field(default="bq2UMqo6viqJOTEeM4OH", description="ACCESS_KEY")
+    SECRET_KEY: str = Field(default="RkhTZOk5eWNJO7NGesYQ3WL2az4Ft3NfJxv7JwKG", description="SECRET_KEY")
+    SECURE: bool = Field(default=False, description="是否启用ssl")
+    HOST: str = Field(default="oss.ethersky.cn", description="监听主机")
+    PORT: int = Field(default=80, description="监听端口")
+    BUCKET_NAME: str = Field(default="rankpilot", description="ACCESS_KEY")
+
+    @computed_field
+    @property
+    def ENDPOINT(self) -> str:
+        """数据库连接URL"""
+        return f"{self.HOST}:{self.PORT}"
+
+
 class FastAPISettings(BaseSettings):
     """FastAPI配置
 
@@ -228,6 +243,7 @@ class Settings(BaseSettings):
     system: SystemSettings = Field(default_factory=SystemSettings,description="系统配置")
     FASTAPI_CONFIG: FastAPISettings = Field(default_factory=FastAPISettings, description="FastAPI配置")
     RABBITMQ_CONFIG: RabbitMQSettings = Field(default_factory=RabbitMQSettings, description="FastAPI配置")
+    MINIO_CONFIG: MinIOSettings = Field(default_factory=MinIOSettings, description="FastAPI配置")
     STATIC_URL : str = Field(
         default=os.path.join(root_path, "static"), description="静态文件路径"
     )

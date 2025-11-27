@@ -11,7 +11,7 @@ from src.defined.http_code import HttpCode
 from src.schemas.response_schema import ResponseSchema, ResponseGenericSchema, PageResponseDataSchema
 
 DataT = TypeVar("DataT", bound=Optional[Any])
-11111
+
 
 class BaseController:
     """基础控制器类，提供通用的响应处理和用户信息获取功能"""

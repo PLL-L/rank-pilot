@@ -9,7 +9,7 @@ FASTAPI_CONFIG:
   TITLE: "RankPilot编排系统"
   DESCRIPTION: "这是一个前后端分离的编排系统"
   HOST: "0.0.0.0"
-  PORT: 9000
+  PORT: 9100
   VERSION: "1.0.0"
 
 db:
@@ -32,6 +32,10 @@ db:
 
     POOL_SIZE: 10
 
+MINIO_CONFIG:
+  HOST: "oss.ethersky.cn"
+  ACCESS_KEY: "bq2UMqo6viqJOTEeM4OH"
+  SECRET_KEY: "RkhTZOk5eWNJO7NGesYQ3WL2az4Ft3NfJxv7JwKG"
 
 RABBITMQ_CONFIG:
   RABBITMQ_URL: "amqp://guest:guest@localhost:5672/"

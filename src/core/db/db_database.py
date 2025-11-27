@@ -154,7 +154,12 @@ async def get_db_dependency() -> AsyncGenerator[AsyncSession, Any]:
     """获取数据库会话依赖 - 依赖注入"""
     async with AsyncDatabaseTool.from_url() as db_tool:
         await db_tool.get_pool_stats()
-        yield db_tool
+        async with db_tool.async_session() as session:
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
 
 
 @asynccontextmanager
