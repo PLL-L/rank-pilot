@@ -135,10 +135,6 @@ class SystemSettings(BaseSettings):
         default=os.path.join(root_path, "logs"), description="日志路径"
     )
 
-    STATIC_PATH: str = Field(
-        default=os.path.join(root_path, "static"), description="静态文件路径"
-    )
-
     CORS_ORIGIN_ENABLE: bool = Field(default=True, description="是否启用CORS")
     ALLOW_ORIGINS: List[str] = Field(default=["*"], description="允许的源")
     ALLOW_CREDENTIALS: bool = Field(default=True, description="是否允许凭证")
@@ -165,7 +161,7 @@ class SystemSettings(BaseSettings):
 
 
     @field_validator(
-        "LOG_PATH","STATIC_PATH"
+        "LOG_PATH",
     )
     def validate_paths(cls, v: str) -> str:
         """验证路径是否存在，不存在则创建"""
@@ -228,9 +224,7 @@ class Settings(BaseSettings):
     system: SystemSettings = Field(default_factory=SystemSettings,description="系统配置")
     FASTAPI_CONFIG: FastAPISettings = Field(default_factory=FastAPISettings, description="FastAPI配置")
     RABBITMQ_CONFIG: RabbitMQSettings = Field(default_factory=RabbitMQSettings, description="FastAPI配置")
-    STATIC_URL : str = Field(
-        default=os.path.join(root_path, "static"), description="静态文件路径"
-    )
+
 
 
     model_config = SettingsConfigDict(

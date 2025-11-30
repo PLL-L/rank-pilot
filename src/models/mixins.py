@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from sqlmodel import SQLModel, Field
+from sqlalchemy import Column, TIMESTAMP, text
 
 
 class TimestampMixin(SQLModel, table=False):
@@ -18,6 +19,5 @@ class TimestampMixin(SQLModel, table=False):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: Optional[datetime] = Field(default=None)
-    # 将 updated_at 字段设置为可选，允许子类覆盖或排除
-    updated_at: Optional[datetime] = Field(default=None, sa_column_kwargs={"info": {"skip": True}})
+    updated_at: Optional[datetime] = Field(default=None)
 
