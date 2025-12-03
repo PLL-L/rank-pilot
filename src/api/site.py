@@ -2,11 +2,15 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi_utils.cbv import cbv
+from src.schemas.site_schema import DomainMonitorQueryParams, AccountListRequest, TrendListRequest
 
 from src.api.base import BaseController
 from src.core.db.db_database import get_db_dependency
-from src.models.domain_model import DomainTable
-from src.schemas.site_schema import DomainCreateRequest, DomainListRequest, DomainSearchRequest, TestDataRequest
+from src.schemas.keyword_schema import KeywordDeleteRequest, KeywordTestDataRequest, KeywordQueryParams
+from src.schemas.response_schema import ResponseSchema
+from src.schemas.site_schema import  DomainQueryParams, DomainMonitorPushRequest, \
+    TrafficMonitorPushRequest, TrafficMonitorListRequest
+
 from src.service.site import SiteService
 
 site_bp = APIRouter()
@@ -16,167 +20,172 @@ site_bp = APIRouter()
 class SiteController(BaseController):
     site_service: SiteService = Depends(SiteService)
 
-    @site_bp.get("/get_filter_options", description="获取筛选选项")
-    async def get_filter_options(self,
-                                 type: Optional[str] = Query(None,
-                                                             description="筛选类型，可选值：domain_group、server_number"),
-                                 session=Depends(get_db_dependency)):
-        """获取域名分组和服务器信息（去重）"""
-        try:
-            msg = '参数错误: 筛选类型错误'
-            if type:
-                if type == "domain_group":
-                    result = await self.site_service.get_domain_groups(session=session)
-                    msg = "获取域名分组成功"
-                elif type == "server_number":
-                    result = await self.site_service.get_server_numbers(session=session)
-                    msg = "获取服务器信息成功"
-                else:
-                    result = None
-                    self.error(msg)
-                return self.success(msg, data=result)
-        except Exception as e:
-            return self.error(str(e))
-
-    @site_bp.post("/list", description="获取域名列表")
+    @site_bp.post("/domain/list", description="获取域名列表")
     async def get_domain_list(
             self,
-            page: int = Query(1, description="页码", ge=1),
-            size: int = Query(10, description="每页大小", ge=1, le=100),
-            domain_name: Optional[str] = Query(None, description="域名名称筛选"),
-            domain_group: Optional[str] = Query(None, description="域名分组筛选"),
-            server_number: Optional[str] = Query(None, description="服务器信息筛选"),
-            main_domain: Optional[str] = Query(None, description="主域名筛选"),
-            baidu_site_account: Optional[str] = Query(None, description="百度站平号筛选"),
-            is_baidu_verified: Optional[bool] = Query(None, description="是否通过百度认证"),
+            query: DomainQueryParams = Query(..., description="查询参数"),
             session=Depends(get_db_dependency)
     ):
         """获取域名列表（支持分页和多条件筛选）"""
-        try:
-            result = await self.site_service.get_domain_list(
-                session=session,
-                page=page,
-                size=size,
-                domain_name=domain_name,
-                domain_group=domain_group,
-                server_number=server_number,
-                main_domain=main_domain,
-                baidu_site_account=baidu_site_account,
-                is_baidu_verified=is_baidu_verified
-            )
-            return self.success("获取域名列表成功", data=result)
-        except Exception as e:
-            return self.error(str(e))
 
-    @site_bp.get("/{id}", description="根据ID获取域名详情")
-    async def get_domain_by_id(
-            self,
-            id: int,
-            session=Depends(get_db_dependency)
-    ):
-        """根据ID获取域名详情"""
-        try:
-            result = await self.site_service.get_domain_by_id(
-                session=session,
-                id=id
-            )
-            if result:
-                return self.success("获取域名详情成功", data=result)
-            else:
-                return self.error("域名不存在")
-        except Exception as e:
-            return self.error(str(e))
-
-    @site_bp.get("/group/{domain_group}", description="根据分组获取域名列表")
-    async def get_domains_by_group(
-            self,
-            domain_group: str,
-            page: int = Query(1, description="页码", ge=1),
-            size: int = Query(10, description="每页大小", ge=1, le=100),
-            session=Depends(get_db_dependency)
-    ):
-        """根据域名分组获取域名列表"""
-        result = await self.site_service.get_domains_by_group(
+        result = await self.site_service.get_domain_list(
             session=session,
-            domain_group=domain_group,
-            page=page,
-            size=size
+            query=query,
         )
-        return self.success("获取分组域名列表成功", data=result)
+        return self.success(data=result)
 
-    @site_bp.get("/search/{keyword}", description="模糊搜索域名")
-    async def search_domains(
-            self,
-            keyword: str,
-            page: int = Query(1, description="页码", ge=1),
-            size: int = Query(10, description="每页大小", ge=1, le=100),
-            session=Depends(get_db_dependency)
-    ):
-        """搜索域名（支持域名名称和主域名模糊搜索）"""
-        try:
-            result = await self.site_service.search_domains(
-                session=session,
-                keyword=keyword,
-                page=page,
-                size=size
-            )
-            return self.success("搜索域名成功", data=result)
-        except Exception as e:
-            return self.error(str(e))
 
-    @site_bp.post("/create", description="创建域名")
-    async def create_domain(
-            self,
-            request: DomainCreateRequest,
-            session=Depends(get_db_dependency)
-    ):
-        """创建新的域名记录"""
-        try:
-            result = await self.site_service.create_domain(
-                session=session,
-                domain_name=request.domain_name,
-                domain_group=request.domain_group,
-                server_number=request.server_number,
-                remark=request.remark
-            )
-            return self.success("创建域名成功", data=result)
-        except Exception as e:
-            return self.error(str(e))
 
-    @site_bp.post("/test-data", description="插入测试数据")
-    async def insert_test_data(
-            self,
-            request: TestDataRequest,
-            session=Depends(get_db_dependency)
-    ):
-        """插入测试数据"""
-        try:
-            result = await self.site_service.insert_test_data(
-                session=session,
-                count=request.count
-            )
-            return self.success(f"成功插入 {request.count} 条测试数据", data=result)
-        except Exception as e:
-            return self.error(str(e))
-
-    @site_bp.delete("/", description="删除域名")
+    @site_bp.delete("/domain", description="删除域名")
     async def delete_domain(
             self,
             ids: list[int],
             session=Depends(get_db_dependency)
     ):
         """批量删除域名记录"""
-        try:
-            result = await self.site_service.delete_domain_by_ids(
-                session=session,
-                ids=ids
-            )
-            return self.success("删除域名成功", data=result)
-        except Exception as e:
-            return self.error(str(e))
 
-    @site_bp.get("/demo/{id}", description="演示接口")
-    async def demo(self, id: int):
-        """保留的演示接口"""
-        rest = []
-        return self.success("演示", data=rest)
+        result = await self.site_service.delete_domain_by_ids(
+            session=session,
+            ids=ids
+        )
+        return self.success()
+
+
+
+    @site_bp.get("/domain_monitor/pull_task", description="域名监控任务派发")
+    async def domain_monitor_pull_task(self):
+        """任务派发"""
+        result = await self.site_service.domain_monitor_pull_task()
+        return self.success(data = result)
+
+    @site_bp.post("/domain_monitor/push_task", description="域名监控任务结果存储")
+    async def domain_monitor_push_task(
+            self,
+            params: DomainMonitorPushRequest,
+    ):
+        """域名结果存储"""
+        await self.site_service.domain_monitor_push_task(params)
+        return self.success()
+
+
+    @site_bp.get("/traffic_monitor/pull_task", description="流量监控任务派发")
+    async def traffic_monitor_pull_task(self):
+        """流量任务派发"""
+        result = await self.site_service.traffic_monitor_pull_task()
+        return self.success(data = result)
+
+    @site_bp.post("/traffic_monitor/push_task", description="流量监控任务结果存储")
+    async def traffic_monitor_push_task(
+            self,
+            params: TrafficMonitorPushRequest,
+    ):
+        """流量结果存储"""
+        await self.site_service.traffic_monitor_push_task(params)
+        return self.success()
+
+    @site_bp.post("/domain_monitor/list", description="查询域名监控列表", response_model=ResponseSchema)
+    async def list_domain_monitors(
+            self,
+            params: DomainMonitorQueryParams,
+            session=Depends(get_db_dependency),
+    ):
+        """
+        查询域名监控列表
+
+        支持以下查询条件：
+        - 平台：必须，多选，默认为百度PC+百度M
+        - 关键词：支持多选，支持模糊查询
+        - 域名列表：支持多选，完全匹配
+        - 是否自购域名：checkbox
+        - 排名：范围查询
+        - 执行时间：范围查询
+        """
+        result = await self.site_service.get_domain_monitor_list(
+            session=session,
+            params=params,
+        )
+        return self.success(data=result)
+
+
+
+    @site_bp.get("/keyword/platforms", description="获取可选平台列表", response_model=ResponseSchema)
+    async def get_platforms(self):
+        """获取平台列表，用于前端多选"""
+        platforms = self.site_service.get_platforms()
+        return self.success(data=platforms)
+
+    @site_bp.post("/keyword/list", description="查询关键词配置", response_model=ResponseSchema)
+    async def list_keyword_infos(
+            self,
+            params: KeywordQueryParams = Depends(),
+            session=Depends(get_db_dependency),
+    ):
+        """按平台、关键词和备注查询配置"""
+        result = await self.site_service.get_keyword_infos(
+            session=session,
+            platforms=params.platforms,
+            keywords=params.keywords,
+            remark=params.remark,
+        )
+        return self.success(data=result)
+
+    @site_bp.delete("/keyword", description="删除关键词")
+    async def delete_keyword(
+            self,
+            request: KeywordDeleteRequest,
+            session=Depends(get_db_dependency)
+    ):
+        """批量删除 关键词配置"""
+
+        result = await self.site_service.delete_keyword_by_ids(
+            session=session,
+            ids=request.ids
+        )
+        return self.success("删除域名成功", data=result)
+
+
+
+    @site_bp.post("/traffic_monitor/list", description="查询流量监控聚合数据", response_model=ResponseSchema)
+    async def list_traffic_monitors(
+            self,
+            params: TrafficMonitorListRequest,
+            session=Depends(get_db_dependency),
+    ):
+
+        result = await self.site_service.list_traffic_monitors(
+            session=session,
+            params=params,
+        )
+        data = result['items']
+        total = result['pagination']['total']
+        return self.paginated_response(data=data,total=total,current=params.page, size=params.size)
+
+
+
+    @site_bp.post("/account/list", description="站平账号列表", response_model=ResponseSchema)
+    async def list_accounts(
+            self,
+            params: AccountListRequest,
+            session=Depends(get_db_dependency),
+    ):
+
+        result = await self.site_service.list_site_accounts(
+            session=session,
+            params=params,
+        )
+        data = result['items']
+        total = result['pagination']['total']
+        return self.paginated_response(data=data,total=total,current=params.page, size=params.size)
+
+    @site_bp.post("/trend/list", description="趋势图数据", response_model=ResponseSchema)
+    async def get_trend_chart(
+            self,
+            params: TrendListRequest,
+            session=Depends(get_db_dependency),
+    ):
+
+        result = await self.site_service.get_trend_chart(
+            session=session,
+            params=params,
+        )
+        return self.success(data=result['data'])

@@ -1,3 +1,4 @@
+import asyncio
 import io
 import json
 import os
@@ -32,22 +33,22 @@ class MinIOFileStrategy(AbstractUpload):
 
         self.bucket_name = settings.MINIO_CONFIG.BUCKET_NAME
 
-        # policy = {
-        #     "Version": "2012-10-17",
-        #     "Statement": [
-        #         {
-        #             "Effect": "Allow",
-        #             "Principal": {"AWS": "*"},
-        #             "Action": ["s3:GetObject"],
-        #             "Resource": [f"arn:aws:s3:::{self.bucket_name}/*"]
-        #         }
-        #     ]
-        # }
-        # self.client.set_bucket_policy(bucket_name=self.bucket_name, policy=json.dumps(policy))
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": "*"},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{self.bucket_name}/*"]
+                }
+            ]
+        }
+        self.client.set_bucket_policy(bucket_name=self.bucket_name, policy=json.dumps(policy))
 
 
 
-    def upload_file(
+    async def upload_file(
             self,
             file_content: Union[io.IOBase, bytes, BinaryIO],
             file_path: str,
@@ -69,7 +70,7 @@ class MinIOFileStrategy(AbstractUpload):
 
 
             # 确保存储桶存在
-            if not self.ensure_bucket_exists():
+            if not await self.ensure_bucket_exists():
                 raise GlobalErrorCodeException(code=-1, msg=f"存储桶 '{self.bucket_name}' 创建失败")
 
             # 处理bytes类型数据
@@ -88,7 +89,8 @@ class MinIOFileStrategy(AbstractUpload):
                     file_content.seek(current_pos)  # 恢复位置
 
             # 上传文件流
-            self.client.put_object(
+            await asyncio.to_thread(
+                self.client.put_object,
                 bucket_name=self.bucket_name,
                 object_name=f"{file_path}/{file_name}",
                 data=file_content,
@@ -97,11 +99,11 @@ class MinIOFileStrategy(AbstractUpload):
             )
 
             # 生成访问URL
-            file_url = f"http://{settings.MINIO_CONFIG.ENDPOINT}/{self.bucket_name}/{file_name}"
+            file_url = f"http://{settings.MINIO_CONFIG.ENDPOINT}/{self.bucket_name}/{file_path}/{file_name}"
 
             # file_url = self.get_presigned_url(bucket_name, object_name)
 
-            logger.info(f"文件流上传成功: {file_name} -> {self.bucket_name}")
+            logger.info(f"文件流上传成功: {file_url}")
 
             return {
                 "file_name": file_name,
@@ -143,15 +145,21 @@ class MinIOFileStrategy(AbstractUpload):
 
 
 
-    def ensure_bucket_exists(self) -> bool:
+    async def ensure_bucket_exists(self) -> bool:
         """确保存储桶存在"""
         try:
-            if not self.client.bucket_exists(bucket_name=self.bucket_name):
-                self.client.make_bucket(bucket_name=self.bucket_name)
+            # 使用 to_thread 将同步的 bucket_exists 调用变为异步非阻塞
+            exists = await asyncio.to_thread(self.client.bucket_exists, bucket_name = self.bucket_name)
+            if not exists:
+                # 如果不存在，同样使用 to_thread 异步创建
+                await asyncio.to_thread(self.client.make_bucket, bucket_name = self.bucket_name)
                 logger.info(f"存储桶 '{self.bucket_name}' 创建成功")
             return True
         except S3Error as e:
             logger.error(f"创建存储桶失败: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"检查或创建存储桶时发生未知错误: {e}")
             return False
 
     def download_file_as_stream(self, bucket_name: str, object_name: str) -> Optional[io.BytesIO]:

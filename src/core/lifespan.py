@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Startup: lifespan startup 🚀")
     app.state.redis = AsyncRedisTool() # 需要手动归还连接
     app.state.db_tool = AsyncDatabaseTool()
-    app.state.mongo_manager = AsyncMongoManager()
+    # app.state.mongo_manager = AsyncMongoManager()
     await aio_mq.connect()
     await start_scheduler()
 
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     logger.info("🧹 Shutdown: lifespan shutdown... 🧹")
     await app.state.redis.close_pool()
     await app.state.db_tool.close_pool()
-    await app.state.mongo_manager.close_pool()
+    # await app.state.mongo_manager.close_pool()
     await aio_mq.close()
     await stop_scheduler()
 

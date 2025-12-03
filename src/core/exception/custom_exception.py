@@ -13,12 +13,11 @@ class BaseException(Exception):
     def __init__(
         self,
         exc: HttpCode = None,
-        *args,
         code: int = 400,
         msg: str = "错误",
         status_code: int = 200,
-        echo_exc: bool = False,
-        **kwargs,
+        # echo_exc: bool = False,
+        # **kwargs,
     ):
         super().__init__()
         # 判断是否自定义异常，是返回自定义的异常，否则返回其他异常状态
@@ -27,9 +26,9 @@ class BaseException(Exception):
         self._code = code
         self._message = msg
         self._status_code = status_code
-        self.echo_exc = echo_exc
-        self.args = args or []
-        self.kwargs = kwargs or {}
+        # self.echo_exc = echo_exc
+        # self.args = args or []
+        # self.kwargs = kwargs or {}
 
     @property
     def code(self) -> int:
@@ -52,3 +51,11 @@ class GlobalErrorCodeException(BaseException):
     """服务层异常基类"""
     pass
 
+
+
+class ParamsErrorCodeException(BaseException):
+    """参数异常异常基类"""
+    def __init__(self, msg, code = None):
+        super().__init__()
+        self._code = code or HttpCode.PARAMS_VALID_ERROR.code
+        self._message = msg

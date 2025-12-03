@@ -13,6 +13,8 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
 from pydantic import RedisDsn, MongoDsn, Field, field_validator, computed_field
 
+from src.defined.alarm import AlarmType
+
 root_path: Path = Path(__file__).resolve().parents[1]
 
 class RedisConfig(BaseSettings):
@@ -128,6 +130,7 @@ class SystemSettings(BaseSettings):
     """
 
     DEBUG: bool = Field(default=False, description="是否开启调试模式")
+    RUN_MODE : str = Field(default="DEV", description="<UNK>")
     # 日志等级
     LOG_LEVEL: str = Field(default="DEBUG", description="日志等级")
     LOG_CONSOLE_OUT: bool = Field(default=True, description="是否输出日志到控制台")
@@ -144,6 +147,8 @@ class SystemSettings(BaseSettings):
     ALLOW_CREDENTIALS: bool = Field(default=True, description="是否允许凭证")
     ALLOW_METHODS: List[str] = Field(default=["*"], description="允许的方法")
     ALLOW_HEADERS: List[str] = Field(default=["*"], description="允许的头部")
+
+    ALARM_TYPE: str = Field(default=AlarmType.FEISHU, description="报警模式 默认飞书")
 
 
 
@@ -223,6 +228,15 @@ class RabbitMQSettings(BaseSettings):
     RABBITMQ_DISABLE_LOGGING: bool = Field(False, alias="RABBITMQ_DISABLE_LOGGING")
 
 
+class FeiShuAlarmSettings(BaseSettings):
+    URL:str = Field(default="https://open.feishu.cn/open-apis/bot/v2/hook/", description="机器人 URL")
+    SITE_HOOK_KEY:str = Field(default="8564f143-7cc8-48f6-b7b5-1058eab1333a", description="机器人 HOOK_KEY")
+    SITE_HOOK_SECRET:str = Field(default="nTXPbzGS2mxa176qU1nR2b", description="机器人 SECRET")
+
+    STATIC_URL : str = Field(
+        default=os.path.join(root_path, "static"), description="静态文件路径"
+    )
+
 
 class Settings(BaseSettings):
     """
@@ -244,9 +258,7 @@ class Settings(BaseSettings):
     FASTAPI_CONFIG: FastAPISettings = Field(default_factory=FastAPISettings, description="FastAPI配置")
     RABBITMQ_CONFIG: RabbitMQSettings = Field(default_factory=RabbitMQSettings, description="FastAPI配置")
     MINIO_CONFIG: MinIOSettings = Field(default_factory=MinIOSettings, description="FastAPI配置")
-    STATIC_URL : str = Field(
-        default=os.path.join(root_path, "static"), description="静态文件路径"
-    )
+    FEISHU_ALARM: FeiShuAlarmSettings = Field(default_factory=FeiShuAlarmSettings, description="飞书告警配置")
 
 
     model_config = SettingsConfigDict(

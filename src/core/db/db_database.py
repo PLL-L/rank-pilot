@@ -160,6 +160,9 @@ async def get_db_dependency() -> AsyncGenerator[AsyncSession, Any]:
             except Exception:
                 await session.rollback()
                 raise
+            finally:
+                await session.close()
+
 
 
 @asynccontextmanager

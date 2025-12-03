@@ -1,5 +1,10 @@
+import decimal
+import json
 import random
 import string
+import time
+from datetime import datetime
+from decimal import Decimal
 from typing import TypeVar, Dict, Any, List, Optional
 
 from src.core import settings
@@ -56,6 +61,27 @@ class Tools:
                 data[k] = "*****"
 
         return data
+
+    @classmethod
+    def get_file_name(cls, file_name=None, post_fix=None):
+        ct = time.time()
+        msecs = (ct - int(ct)) * 1000
+        ctr = time.localtime(ct)
+        t = time.strftime("%Y%m%d%H%M%S", ctr)
+        s = "%s%03d" % (t, msecs)
+        if file_name and '.' in file_name:
+            post_fix = '.' + file_name.split('.')[-1]
+        # end if
+        return "{0}{1}".format(s, post_fix)
+
+    @classmethod
+    def reserve_two_digits(cls, value: str) -> str:
+        """将 Decimal 值精确量化到 2 位小数，并返回字符串"""
+        # decimal.ROUND_HALF_UP 是标准的四舍五入规则
+        value = decimal.Decimal(value)
+        quantized_value = value.quantize(Decimal("0.00"), rounding=decimal.ROUND_HALF_UP)
+        # 返回字符串以确保 JSON 序列化时不会再次被处理，同时保留小数点后两位（如 1.00）
+        return str(quantized_value)
 
 
 class CJsonEncoder(json.JSONEncoder):

@@ -1,27 +1,29 @@
+import json
 import secrets
 import string
+from copy import deepcopy
 from typing import Optional
 
 from fastapi import UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import logger
 from src.core.db.db_database import transactional
-from src.core.exception.custom_exception import GlobalErrorCodeException
-from src.models.config_model import ConfigTable
+from src.core.exception.custom_exception import GlobalErrorCodeException, ParamsErrorCodeException
+from src.core.mq import aio_mq
+from src.defined.file import  FileImportWorkType
+from src.defined.mq_routing_key import MqRoutingKey
+from src.defined.selection_define import SELECT_DATA
+from src.models.config import ConfigTable
+from src.models.file_record import FileRecordTable
+from src.models.site_domain_info import DomainInfoTable
 from src.service.base import BaseService
 from src.utils.file.strategy.minio_file import MinIOFileStrategy
+from src.utils.tools import Tools
 
 
 class CommonService(BaseService):
-    pass
-
-    @transactional
-    async def demo(self, id: int, session: AsyncSession):
-        logger.info(f"123 - {id}")
-        result = await session.get(ConfigTable, id)
-        return result
-
 
     async def upload_file_to_minio(
         self,
@@ -50,18 +52,20 @@ class CommonService(BaseService):
             if not file or not file.filename:
                 raise GlobalErrorCodeException(msg="文件对象或文件名为空")
 
-            # 确定最终使用的文件名
-            final_filename = self._determine_filename(
-                original_filename=file.filename,
-                use_random=use_random_filename,
-                custom_name=custom_filename
-            )
+            final_filename = Tools.get_file_name(file.filename)
+
+            # # 确定最终使用的文件名
+            # final_filename = self._determine_filename(
+            #     original_filename=file.filename,
+            #     use_random=use_random_filename,
+            #     custom_name=custom_filename
+            # )
 
             # 初始化MinIO策略
             minio_strategy = MinIOFileStrategy()
 
             # 上传文件
-            file_info = minio_strategy.upload_file(
+            file_info = await minio_strategy.upload_file(
                 file_content=file.file,
                 file_path=file_path,
                 file_name=final_filename,
@@ -76,37 +80,45 @@ class CommonService(BaseService):
             logger.error(f"文件上传失败: {str(e)}")
             raise GlobalErrorCodeException(msg=f"文件上传失败: {str(e)}")
 
-    def _determine_filename(
-        self,
-        original_filename: str,
-        use_random: bool = False,
-        custom_name: Optional[str] = None
-    ) -> str:
+    @transactional
+    async def create_file_import_record(self, data: dict, session: AsyncSession):
         """
-        确定最终使用的文件名
-
-        Args:
-            original_filename: 原始文件名
-            use_random: 是否使用随机文件名
-            custom_name: 自定义文件名
-
-        Returns:
-            str: 最终的文件名
+        创建文件导入记录
         """
-        # 优先使用自定义文件名
-        if custom_name:
-            return custom_name
+        function_type = data.get("function_type").upper()
+        work_type = getattr(FileImportWorkType, str(function_type).upper())
+        if not work_type:
+            raise ParamsErrorCodeException(msg="function_type 类型不支持!")
 
-        # 如果使用随机文件名
-        if use_random:
-            # 保留原始文件扩展名
-            file_extension = ""
-            if "." in original_filename:
-                file_extension = original_filename.rsplit(".", 1)[1]
+        record = FileRecordTable(
+            file_url=data.get("file_url"),
+            file_name=data.get("file_name"),
+            function_type=function_type,
+            operation_type=data.get("operation_type"),
+            res_model=data.get("res_model"),
+            res_id=data.get("res_id"),
+            status="process",  # 初始状态
+            params=data.get("params", {})
+            # created_uid 可以从 request context 中获取当前用户ID，这里暂不处理
+        )
 
-            # 生成8位随机字符串作为文件名
-            random_name = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
-            return f"{random_name}.{file_extension}" if file_extension else random_name
+        session.add(record)
+        await session.flush()
+        await session.commit()
 
-        # 默认使用原始文件名
-        return original_filename
+        await aio_mq.publish(
+            routing_key=MqRoutingKey.FILE_IMPORT,
+            msg=json.dumps({"file_id": record.id, "work_type": work_type})
+        )
+        return record
+
+    async def enum_list(self):
+        all_select_option = deepcopy(SELECT_DATA)
+
+
+        column = getattr(DomainInfoTable, "")
+        query = select(column).distinct().where(column.isnot(None))
+        # result = await session.execute(query)
+        #
+        # groups = [group for group in groups if group]
+        return all_select_option

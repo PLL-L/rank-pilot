@@ -1,10 +1,13 @@
 from datetime import datetime
 from typing import Optional
 from sqlmodel import SQLModel, Field
+
+from datetime import datetime
+from typing import Optional
+from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, TIMESTAMP, text
 
-
-class TimestampMixin(SQLModel, table=False):
+class CommonMixin(SQLModel, table=False):
     """
     时间戳 Mixin，提供 id、created_at、updated_at 字段
     
@@ -18,6 +21,38 @@ class TimestampMixin(SQLModel, table=False):
     """
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(
+        default=None,
+        nullable=False,
+        sa_column_kwargs={
+            "server_default": text("CURRENT_TIMESTAMP"),
+            "comment": "创建时间（UTC）"
+        }
+    )
 
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        nullable=False,
+        sa_column_kwargs={
+            "server_default": text("CURRENT_TIMESTAMP"),
+            "comment": "更新时间（UTC）"
+        }
+    )
+
+    created_uid: Optional[int] = Field(
+        default=None,
+        sa_column_kwargs={
+            "nullable": True,
+            "comment": "创建人ID"
+        },
+        description="创建该记录的用户ID"
+    )
+
+    updated_uid: Optional[int] = Field(
+        default=None,
+        sa_column_kwargs={
+            "nullable": True,
+            "comment": "更新人ID"
+        },
+        description="最后更新该记录的用户ID"
+    )

@@ -4,14 +4,14 @@
 from fastapi import FastAPI
 
 from src.api.common import common_bp
-from src.api.keyword import keyword_bp
+
 from src.api.site import site_bp
+
 from src.config import settings
 
 router_list = [
     {"router": common_bp, "prefix": "/common"},
     {"router": site_bp, "prefix": "/site","tag":"域名管理"},
-    {"router": keyword_bp, "prefix": "/keyword","tag":"关键词管理"},
 ]
 
 def setup_routes(app: FastAPI):
