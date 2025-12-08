@@ -33,6 +33,7 @@ class DatabaseConfig:
             echo: bool = settings.db.ORM_DB.DB_ECHO,
             pool_reset_on_return: bool = settings.db.ORM_DB.POOL_RESET_ON_RETURN,
             echo_pool: bool = settings.db.ORM_DB.ECHO_POOL,
+            future: bool = settings.db.ORM_DB.FUTURE,
 
     ):
         self.url = url or settings.db.ORM_DB.DB_URL
@@ -44,6 +45,7 @@ class DatabaseConfig:
         self.echo = echo
         self.pool_reset_on_return = pool_reset_on_return
         self.echo_pool = echo_pool
+        self.future = future
 
 
 
@@ -71,8 +73,9 @@ class AsyncDatabaseTool(metaclass=Singleton):
                 pool_recycle=self.config.pool_recycle,
                 pool_pre_ping=self.config.pool_pre_ping,
                 echo=self.config.echo,
-                pool_reset_on_return=self.config.pool_reset_on_return, # todo
-                echo_pool = self.config.echo_pool #todo
+                pool_reset_on_return=self.config.pool_reset_on_return,
+                echo_pool = self.config.echo_pool,
+                future = self.config.future
 
             )
 

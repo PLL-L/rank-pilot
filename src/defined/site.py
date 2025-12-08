@@ -32,4 +32,4 @@ class BusinessTypeEnum(str, Enum):
     终端类型枚举
     """
     KEYWORD = "keyword"
-    HOT_PAGE = "hot_page"
+    PAGE = "page"

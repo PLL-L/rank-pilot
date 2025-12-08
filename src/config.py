@@ -85,12 +85,13 @@ class DataBaseSettings(BaseSettings):
     DB_ECHO: bool = Field(default=False, description="是否输出SQL语句")
 
     POOL_SIZE: int = Field(default=5, description="连接池大小")
-    MAX_OVERFLOW: int = Field(default=10, description="")# todo
-    POOL_TIMEOUT: int = Field(default=60, description="")# todo
-    POOL_RECYCLE: int = Field(default=3600, description="")# todo
-    POOL_PRE_PING: bool = Field(default=True, description="")# todo
-    POOL_RESET_ON_RETURN: bool = Field(default=True, description="")# todo
-    ECHO_POOL: bool = Field(default=False, description="")# todo
+    MAX_OVERFLOW: int = Field(default=10, description="最大溢出连接数")
+    POOL_TIMEOUT: int = Field(default=60, description="连接等待超时时间（秒）,等到超时就报错")
+    POOL_RECYCLE: int = Field(default=3600, description="连接回收时间（秒）, 超过3600 重新创建")
+    POOL_PRE_PING: bool = Field(default=True, description="连接预检")
+    POOL_RESET_ON_RETURN: bool = Field(default=True, description="连接返回重置")
+    ECHO_POOL: bool = Field(default=False, description="连接池日志开关")
+    FUTURE: bool = Field(default=True, description="适用于 SQLAlchemy 2.0 风格")
 
     @computed_field
     @property
@@ -268,7 +269,6 @@ class Settings(BaseSettings):
         ),
         yaml_file_encoding="utf-8",
     )
-
 
     # 加载环境变量优先级
     @classmethod

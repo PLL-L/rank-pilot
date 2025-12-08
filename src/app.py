@@ -1,4 +1,4 @@
-"""
+﻿"""
 FastAPI 应用主入口文件 - 使用 SQLModel
 """
 from fastapi import FastAPI
@@ -9,6 +9,7 @@ from src.config import settings
 from src.core.exception.exception_handler import setup_exception_handlers
 from src.core.middlewares import setup_middleware
 from src.core.lifespan import lifespan
+from src.core.middlewares.log_middleware import LoggingJSONResponse
 
 
 def create_app() -> FastAPI:
@@ -19,6 +20,7 @@ def create_app() -> FastAPI:
     serving_str = f"\nAPI Server URL:http://{host}:{port}"
     serving_str += f"\nSwagger UI Docs:{server_address}/docs"
     serving_str += f"\nRedoc HTML Docs:{server_address}/redoc"
+    serving_str += f"\n配置文件路径: {settings.model_config['yaml_file']}"
 
     logger.info(serving_str)
 
@@ -29,6 +31,7 @@ def create_app() -> FastAPI:
         version=settings.FASTAPI_CONFIG.VERSION,
         lifespan=lifespan,
         openapi_url=f"{settings.system.API_V1_STR}/openapi.json",
+        default_response_class=LoggingJSONResponse
     )
 
     # 配置异常处理器

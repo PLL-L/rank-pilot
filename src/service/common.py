@@ -15,7 +15,6 @@ from src.core.mq import aio_mq
 from src.defined.file import  FileImportWorkType
 from src.defined.mq_routing_key import MqRoutingKey
 from src.defined.selection_define import SELECT_DATA
-from src.models.config import ConfigTable
 from src.models.file_record import FileRecordTable
 from src.models.site_domain_info import DomainInfoTable
 from src.service.base import BaseService
@@ -112,13 +111,25 @@ class CommonService(BaseService):
         )
         return record
 
-    async def enum_list(self):
+    @transactional
+    async def enum_list(self, session: AsyncSession):
         all_select_option = deepcopy(SELECT_DATA)
+        # 查询域名分组信息并去重
+        domain_group_column = getattr(DomainInfoTable, "domain_group")
+        domain_group_query = select(domain_group_column).distinct().where(domain_group_column.isnot(None))
+        domain_group_result = await session.execute(domain_group_query)
+        domain_groups = domain_group_result.scalars().all()
+        domain_groups = [group for group in domain_groups if group]
 
+        # 查询服务器信息并去重
+        server_info_column = getattr(DomainInfoTable, "server_number")
+        server_info_query = select(server_info_column).distinct().where(server_info_column.isnot(None))
+        server_info_result = await session.execute(server_info_query)
+        server_infos = server_info_result.scalars().all()
+        server_infos = [info for info in server_infos if info]
 
-        column = getattr(DomainInfoTable, "")
-        query = select(column).distinct().where(column.isnot(None))
-        # result = await session.execute(query)
-        #
-        # groups = [group for group in groups if group]
+        # 将结果组装成字典格式返回
+        all_select_option["domainGroup"] = [{"name": group, "value": group} for group in domain_groups]
+        all_select_option["serverInfo"] = [{"name": info, "value": info} for info in server_infos]
+
         return all_select_option

@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import Integer, String, Boolean
+from sqlalchemy.dialects.postgresql import CITEXT
 from sqlmodel import Field, SQLModel, Column, DateTime, func, Index
 
 from src.models.mixins import CommonMixin
@@ -37,7 +38,7 @@ class SiteDomainMonitorBase(SQLModel):
     # 域名名称：VARCHAR(255) 可为空
     domain_name: Optional[str] = Field(
         default=None,
-        sa_column=Column("domain_name", String(255), nullable=True),
+        sa_column=Column("domain_name", CITEXT(255), nullable=True),
         description="域名名称"
     )
 
@@ -68,6 +69,11 @@ class SiteDomainMonitorBase(SQLModel):
         description="排名"
 
     )
+    # execute_time: datetime = Field(
+    #     default_factory=datetime.now,
+    #     sa_column=Column("execute_time", DateTime),
+    #     description="执行时间"
+    # )
 
 
 

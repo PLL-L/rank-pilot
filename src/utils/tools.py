@@ -83,16 +83,59 @@ class Tools:
         # 返回字符串以确保 JSON 序列化时不会再次被处理，同时保留小数点后两位（如 1.00）
         return str(quantized_value)
 
+# 时间解析
+def parse_datetime(v):
+    """将字符串解析为 datetime 对象"""
+    if v is None:
+        return v
 
-class CJsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.strftime("%Y-%m-%d %H:%M:%S")
-        elif isinstance(obj, date):
-            return obj.strftime("%Y-%m-%d")
-        elif isinstance(obj, timedelta):
-            return str(obj)
-        elif isinstance(obj, decimal.Decimal):
-            return float(obj)
-        else:
-            return json.JSONEncoder.default(self, obj)
+    if isinstance(v, datetime):
+        return v
+
+    if isinstance(v, str):
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+            return v
+        except Exception as e:
+            raise ValueError(f"时间格式错误: {v}, 请使用 YYYY-MM-DD格式")
+    return v
+
+def load_regions_from_json(json_path: str):
+    # 导入中国地区数据
+    import json
+    from src.models.china_regions import ChinaRegions  # 模型路径根据实际调整
+
+    from sqlmodel import Session, create_engine
+    """从 JSON 文件加载地区数据并转换为模型实例"""
+    with open(json_path, "r", encoding="utf-8") as f:
+        regions_data = json.load(f)
+
+    # 提取 code 和 name，转换为模型实例
+    regions = []
+    for item in regions_data:
+        if "省" in item["name"]:
+            print(item["name"])
+            continue
+        regions.append(
+            ChinaRegions(
+                code=item.get("code"),
+                city_name=item.get("name"),
+            )
+        )
+    print(regions)
+    # 数据库连接 URL（根据实际配置调整）
+    # DATABASE_URL = "postgresql://postgres:123456@localhost:5432/pgtest"
+    DATABASE_URL = "postgresql://dbuser_meta:DBUser.Meta@192.168.110.104:5432/rankpilot"
+    engine = create_engine(DATABASE_URL)
+
+
+    def bulk_insert_regions():
+        """批量插入地区数据到数据库"""
+        with Session(engine) as session:
+            session.add_all(regions)  # 批量添加实例
+            session.commit()  # 提交事务
+    bulk_insert_regions()
+
+
+# if __name__ == '__main__':
+#     load_regions_from_json("city2.json")

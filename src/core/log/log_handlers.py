@@ -40,6 +40,15 @@ class InterceptHandler(logging.Handler):
         except Exception:
             loguru_logger.exception("Error in InterceptHandler.emit()")
 
+    def filter(self, record):
+
+        # 检查日志是否来自 SQLAlchemy Engine 并且是 SQL 语句本身
+        if record.name == 'sqlalchemy.engine.Engine':
+            # SQLAlchemy 打印 SQL 语句的日志消息通常是一个字符串，且包含换行符。
+            # 使用 split() 和 join() 是去除换行符和多余空格的有效方法。
+            if isinstance(record.msg, str):
+                record.msg = ' '.join(record.msg.split())
+        return True
 
 def setup_log_interception(
     logger_names: Optional[Iterable[str]] = None,

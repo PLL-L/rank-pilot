@@ -8,7 +8,7 @@ import time
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
 
 from src.core.log import logger
 
@@ -84,7 +84,7 @@ class LogMiddleware(BaseHTTPMiddleware):
         logger.info(
             f"<---- {request.url.path} {request.method} "
             f"{response.status_code} {http_version} {content_length} "
-            f"(耗时: {process_time:.2f}s)\n"
+            f"(耗时: {process_time:.2f}s)"
         )
 
     async def dispatch(
@@ -125,3 +125,20 @@ class LogMiddleware(BaseHTTPMiddleware):
             # logger.error(f"日志中间件处理失败: {str(e)}")
             # 确保异常被正确处理
             raise
+
+
+class LoggingJSONResponse(JSONResponse):
+    """
+    自定义JSON响应类，在渲染内容之前记录返回结果
+    """
+    def render(self, content: any) -> bytes:
+        # 1. 记录返回结果 (content 是路由返回的 Python 对象)
+        try:
+            # 使用 logger 记录内容
+            # 注意：如果 content 很大，可能需要截断或只记录关键信息
+            logger.info(f"<---- Response Data (JSON): {content}")
+        except Exception as e:
+            logger.warning(f"记录响应数据失败: {e}")
+
+        # 2. 调用父类的 render 方法，将 Python 数据转换为 JSON 字节
+        return super().render(content)

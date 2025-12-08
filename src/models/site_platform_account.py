@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional, List, Any, Dict
 from datetime import datetime
 
-from sqlalchemy import ARRAY, String, Column
+from sqlalchemy import ARRAY, String, Column, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -33,7 +33,20 @@ class SitePlatformAccountBase(SQLModel):
         sa_column=Column(JSONB),
         description="登陆后的cookie信息"
     )
-    last_check_time: Optional[datetime] = Field(default=None, description="上次检查时间")
+    last_check_time: Optional[datetime] = Field(
+        sa_column=Column(DateTime(timezone=True), default=None),
+        default=None,
+        description="上次检查时间"
+    )
+
+
+    # last_check_time: Optional[datetime] =  Field(
+    #     default=None,
+    #     nullable=False,
+    #     sa_column_kwargs={
+    #         "comment": "更新时间（UTC）"
+    #     }
+    # )
     managed_domain_count: int = Field(default=0, description="已管理域名数")
 
     # 使用 sa_column 来指定 PostgreSQL 的 TEXT[] 数组类型

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy.dialects.postgresql import CITEXT
 from sqlmodel import SQLModel, Field
 
 from src.models.mixins import CommonMixin
@@ -11,7 +12,8 @@ class DomainInfoBase(SQLModel):
     domain_name: Optional[str] = Field(
         min_length=1,
         max_length=255,
-        sa_column=Column(String(255), nullable=False, comment="域名信息"),
+        sa_column=Column(CITEXT(255), nullable=True,comment="域名信息"),
+        # sa_column=Column(String(255), nullable=False, comment="域名信息"),
         description="用户录入的域名信息，前后去空格，需要校验域名的合法性"
     )
     main_domain: Optional[str] = Field(

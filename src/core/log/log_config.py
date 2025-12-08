@@ -43,7 +43,7 @@ class LogConfig:
 
     def _init_handlers(self):
         """初始化日志处理器"""
-        log_file_path = os.path.join(self.log_path, "app_{time:YYYY-MM-DD}.log")
+        log_file_path = os.path.join(self.log_path, "rank_zen_{time:YYYY-MM-DD}.log")
 
         common_settings = {
             "enqueue": self.enqueue,

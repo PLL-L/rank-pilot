@@ -60,6 +60,7 @@ class CommonController(BaseController):
         summary="枚举列表",
         description="枚举列表接口",
         response_model=ResponseSchema,
+
     )
     async def enum_list(self):
         result = await self.common_service.enum_list()

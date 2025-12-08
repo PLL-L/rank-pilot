@@ -15,6 +15,22 @@ SELECT_DATA = {
     'accountStatus': [
         {'name': '未知', 'value': 'init'},
         {'name': '正常', 'value': 'normal'},
-        {'name': '异常', 'value': 'abnormal'},
-    ]
+        {'name': '登陆失败', 'value': 'abnormal'},
+    ],
+    'businessType': [
+        {'name': '关键词趋势列表', 'value': 'keyword'},
+        {'name': '热门页面趋势列表', 'value': 'page'},
+    ],
+    'terminalType': [
+        {'name': 'PC端', 'value': 'PC'},
+        {'name': 'M端', 'value': 'MOBILE'},
+    ],
+    'isVerified': [
+        {'name': '已认证', 'value': 1},
+        {'name': '未认证', 'value': 0},
+    ],
+    'accountPlatformType': [
+        {'name': '百度', 'value': "BAIDU"},
+        {'name': '360', 'value': "360"},
+    ],
 }

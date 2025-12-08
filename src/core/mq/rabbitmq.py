@@ -28,14 +28,13 @@ from src.utils.json_encoder import CJsonEncoder
 
 class CustomRabbitMQ:
     def __init__(self, url=None, **kwargs):
-        self.url = kwargs.get("rabbitmq_url", url)
-        self.run_mode = kwargs.get("run_mode")
+        self.url = url or settings.RABBITMQ_CONFIG.RABBITMQ_URL
         self.max_retries = kwargs.get("rabbitmq_max_retries", 3)
         self.initial_delay = kwargs.get("rabbitmq_initial_delay", 1.0)
         self.max_retry_time = kwargs.get("rabbitmq_max_retry_time", 10)
         self.exchange_durable = kwargs.get("rabbitmq_exchange_durable", True)
         self.exchange_name = settings.RABBITMQ_CONFIG.RABBITMQ_EXCHANGE_NAME
-        self.exchange_type = kwargs.get("rabbitmq_exchange_type", "direct")
+        self.exchange_type = settings.RABBITMQ_CONFIG.RABBITMQ_EXCHANGE_TYPE
         self.disable_logging = kwargs.get("rabbitmq_disable_logging", False)
         self.connection: Connection = None
         self.channel: Channel = None

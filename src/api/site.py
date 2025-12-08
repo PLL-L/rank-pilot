@@ -12,6 +12,7 @@ from src.schemas.site_schema import  DomainQueryParams, DomainMonitorPushRequest
     TrafficMonitorPushRequest, TrafficMonitorListRequest
 
 from src.service.site import SiteService
+from src.utils.time_zone import TimeZone
 
 site_bp = APIRouter()
 
@@ -23,7 +24,7 @@ class SiteController(BaseController):
     @site_bp.post("/domain/list", description="获取域名列表")
     async def get_domain_list(
             self,
-            query: DomainQueryParams = Query(..., description="查询参数"),
+            query: DomainQueryParams,
             session=Depends(get_db_dependency)
     ):
         """获取域名列表（支持分页和多条件筛选）"""
@@ -32,6 +33,9 @@ class SiteController(BaseController):
             session=session,
             query=query,
         )
+
+        TimeZone.utc_local_list(result['items'], ['created_at', 'updated_at'])
+
         return self.success(data=result)
 
 
@@ -83,6 +87,19 @@ class SiteController(BaseController):
         await self.site_service.traffic_monitor_push_task(params)
         return self.success()
 
+    @site_bp.post("/traffic_monitor/list", description="查询流量监控聚合数据", response_model=ResponseSchema)
+    async def list_traffic_monitors(
+            self,
+            params: TrafficMonitorListRequest,
+            session=Depends(get_db_dependency),
+    ):
+
+        result = await self.site_service.list_traffic_monitors(
+            session=session,
+            params=params,
+        )
+        return self.success(data=result)
+
     @site_bp.post("/domain_monitor/list", description="查询域名监控列表", response_model=ResponseSchema)
     async def list_domain_monitors(
             self,
@@ -100,33 +117,36 @@ class SiteController(BaseController):
         - 排名：范围查询
         - 执行时间：范围查询
         """
+        params = params.model_dump()
+        TimeZone.local_utc_dict(params, ['created_at_start', 'created_at_end'])
         result = await self.site_service.get_domain_monitor_list(
             session=session,
             params=params,
         )
+        TimeZone.utc_local_list(result['items'], ['created_at', 'updated_at'])
+
         return self.success(data=result)
 
-
-
-    @site_bp.get("/keyword/platforms", description="获取可选平台列表", response_model=ResponseSchema)
-    async def get_platforms(self):
-        """获取平台列表，用于前端多选"""
-        platforms = self.site_service.get_platforms()
-        return self.success(data=platforms)
 
     @site_bp.post("/keyword/list", description="查询关键词配置", response_model=ResponseSchema)
     async def list_keyword_infos(
             self,
-            params: KeywordQueryParams = Depends(),
+            params: KeywordQueryParams,
             session=Depends(get_db_dependency),
     ):
         """按平台、关键词和备注查询配置"""
         result = await self.site_service.get_keyword_infos(
             session=session,
             platforms=params.platforms,
-            keywords=params.keywords,
+            keyword=params.keyword,
             remark=params.remark,
+            sort_by=params.sort_by,
+            sort_order=params.sort_order,
+            page=params.page,
+            size=params.size,
         )
+        TimeZone.utc_local_list(result['items'],
+                                ['created_at', 'updated_at',"last_execute_time"])
         return self.success(data=result)
 
     @site_bp.delete("/keyword", description="删除关键词")
@@ -144,24 +164,6 @@ class SiteController(BaseController):
         return self.success("删除域名成功", data=result)
 
 
-
-    @site_bp.post("/traffic_monitor/list", description="查询流量监控聚合数据", response_model=ResponseSchema)
-    async def list_traffic_monitors(
-            self,
-            params: TrafficMonitorListRequest,
-            session=Depends(get_db_dependency),
-    ):
-
-        result = await self.site_service.list_traffic_monitors(
-            session=session,
-            params=params,
-        )
-        data = result['items']
-        total = result['pagination']['total']
-        return self.paginated_response(data=data,total=total,current=params.page, size=params.size)
-
-
-
     @site_bp.post("/account/list", description="站平账号列表", response_model=ResponseSchema)
     async def list_accounts(
             self,
@@ -173,9 +175,8 @@ class SiteController(BaseController):
             session=session,
             params=params,
         )
-        data = result['items']
-        total = result['pagination']['total']
-        return self.paginated_response(data=data,total=total,current=params.page, size=params.size)
+        TimeZone.utc_local_list(result['items'], ['created_at', 'updated_at', 'last_check_time'])
+        return self.success(data=result)
 
     @site_bp.post("/trend/list", description="趋势图数据", response_model=ResponseSchema)
     async def get_trend_chart(

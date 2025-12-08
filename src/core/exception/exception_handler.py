@@ -3,12 +3,14 @@ import traceback
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 
 from starlette.responses import JSONResponse
 
 from src.core import logger
 from src.core.exception.custom_exception import  GlobalErrorCodeException
+from src.defined.http_code import HttpCode
 from src.utils.track_utils import TrackContextUtils
 
 
@@ -93,7 +95,7 @@ def setup_exception_handlers(app: FastAPI):
             # logger.exception(f"请求参数{request_info}, 未处理的异常: {exc}")
             # logger.error(f"请求参数{request_info}, 未处理的异常: {exc}")
 
-            logger.info(f" global --- {traceback.format_exc()}")
+            logger.error(f" global --- {traceback.format_exc()}")
         except Exception as log_exc:
             pass
             # logger.exception(f"记录异常信息时发生错误: {log_exc} 原始异常 {exc}")
@@ -111,10 +113,35 @@ def setup_exception_handlers(app: FastAPI):
     async def global_error_exception_handler(request: Request, exc: GlobalErrorCodeException):
         """处理服务层异常"""
         logger.error(traceback.format_exc())
-        logger.error(exc.__str__())
+        # logger.error(exc.__str__())
 
         return JSONResponse(
             status_code=200,
             content={"msg": exc.msg, "code": exc.code, "data": None},
+            headers=get_headers(),
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_error_exception_handler(request: Request, exc: RequestValidationError):
+        """
+        统一处理 Pydantic 数据校验失败（HTTP 422 Unprocessable Entity）
+        """
+        # 提取 Pydantic 详细的错误信息
+        errors = exc.errors()
+
+        # 格式化错误信息列表，使其更清晰、更易读
+        formatted_details = []
+        for error in errors:
+            # 错误发生的字段路径 (e.g., ('body', 'page'))
+            loc = " -> ".join(map(str, error['loc']))
+
+            # 错误类型和信息
+            msg = f"{loc}:{error['msg']}|"
+            formatted_details.append(msg)
+
+
+        return JSONResponse(
+            status_code=200,
+            content={"msg": "".join(formatted_details), "code": HttpCode.PARAMS_VALID_ERROR.code, "data": None},
             headers=get_headers(),
         )

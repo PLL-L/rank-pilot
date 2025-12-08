@@ -13,7 +13,8 @@ class LinkTrackMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        req_id = TrackContextUtils.set_request_id()  # 生成ID
+        req_id = request.headers.get("X-Request-ID") or None
+        req_id = TrackContextUtils.set_request_id(req_id)  # 生成ID
         response = await call_next(request)
         response.headers["X-Request-ID"] = req_id  # 响应头透传
         return response

@@ -30,7 +30,7 @@ class AbstractAlarm(ABC):
     """
 
     @abstractmethod
-    def send_message(self, title, message, msg_type=None, module="default"):
+    def send_message(self, title, message, is_all=False, module="default"):
         pass
 
 
